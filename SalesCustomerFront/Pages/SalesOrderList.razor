@@ -1,0 +1,64 @@
+﻿@page "/salesorders"
+@using SalesCustomerFront.Interfaces
+@using SalesCustomerFront.Models
+@inject ISalesOrderViewModel ViewModel
+
+<h3>Sales Orders</h3>
+
+<input @bind="searchText" placeholder="Search Order..." />
+<button @onclick="Search">Search</button>
+<button @onclick="ShowAddModal">Add New</button>
+<button @onclick="ExportToExcel">Export</button>
+
+<SalesOrderTable Orders="ViewModel.SalesOrders" OnEdit="EditOrder" OnDelete="DeleteOrder" />
+
+<SalesOrderForm Order="selectedOrder" OnSave="SaveOrder" OnCancel="CancelEdit" />
+
+@code {
+    private string searchText;
+    private SalesOrderModel selectedOrder;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.LoadSalesOrders();
+    }
+
+    private async Task Search()
+    {
+        await ViewModel.LoadSalesOrders();
+    }
+
+    private void ShowAddModal()
+    {
+        selectedOrder = new SalesOrderModel();
+    }
+
+    private async Task EditOrder(SalesOrderModel order)
+    {
+        selectedOrder = await ViewModel.GetRecordById(order.RecId.Value);
+    }
+
+    private async Task SaveOrder()
+    {
+        if (selectedOrder != null)
+        {
+            await ViewModel.MaintainOrder(selectedOrder, selectedOrder.RecId == null ? "INSERT" : "UPDATE");
+            selectedOrder = null;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        selectedOrder = null;
+    }
+
+    private async Task DeleteOrder(SalesOrderModel order)
+    {
+        await ViewModel.MaintainOrder(order, "DELETE");
+    }
+
+    private async Task ExportToExcel()
+    {
+        // Implement export functionality
+    }
+}
