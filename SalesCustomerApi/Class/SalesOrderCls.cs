@@ -46,10 +46,11 @@ namespace SalesCustomerAPI.Class
             return errorMessages;
         }
 
-        public async Task<IEnumerable<SalesOrderBase>> GetListSalesOrder(SalesOrderBase request)
+        public async Task<(IEnumerable<SalesOrderMaintain> Orders, List<string> ErrorCodes)> GetListSalesOrder(SalesOrderBase request)
         {
-            var orders = new List<SalesOrderBase>();
+            var orders = new List<SalesOrderMaintain>();
             var errorCodes = new List<string>();
+
             try
             {
                 await using var conn = new SqlConnection(_connectionString);
@@ -63,20 +64,36 @@ namespace SalesCustomerAPI.Class
                 await using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    orders.Add(new SalesOrderBase
+                    if (!reader.IsDBNull(reader.GetOrdinal("Err_Code")))
+                        errorCodes.Add(reader["Err_Code"].ToString());
+                    else
                     {
-                        Search = reader["ORDER_NO"].ToString(),
-                        OrderDate = reader["ORDER_DATE"].ToString()
-                    });
+                        orders.Add(new SalesOrderMaintain
+                        {
+                            RecId = reader.GetInt32(reader.GetOrdinal("SO_ORDER_ID")),
+                            OrderNo = reader.GetString(reader.GetOrdinal("ORDER_NO")),
+                            OrderDate = reader.GetString(reader.GetOrdinal("ORDER_DATE")),
+                            CustomerName = reader.IsDBNull(reader.GetOrdinal("CUSTOMER_NAME"))
+                                ? ""
+                                : reader.GetString(reader.GetOrdinal("CUSTOMER_NAME"))
+                        });
+                    }
                 }
+            }
+            catch (SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "SQL error in GetListSalesOrder");
+                errorCodes.Add("3001");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching sales orders");
+                _logger.LogError(ex, "Unexpected error in GetListSalesOrder");
                 errorCodes.Add("5000");
             }
-            return orders;
+
+            return (orders, errorCodes);
         }
+
 
         public async Task<SalesOrderBase> GetRecordSalesOrder(int recId)
         {

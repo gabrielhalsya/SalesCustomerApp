@@ -1,0 +1,42 @@
+﻿@using SalesOrderFront.Models
+@code {
+    [Parameter] public List<SalesOrderModel> Orders { get; set; } = new(); // ✅ Ensure the list is never null
+    [Parameter] public EventCallback<SalesOrderModel> OnEdit { get; set; }
+    [Parameter] public EventCallback<SalesOrderModel> OnDelete { get; set; }
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Actions</th>
+            <th>Sales Order Name</th>
+            <th>Order Date</th>
+            <th>Customer Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Orders == null || Orders.Count == 0)  // ✅ Check for empty list
+        {
+            <tr>
+                <td colspan="5" class="text-center">📭 No sales orders available.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var order in Orders.Select((o, i) => new { Order = o, Index = i + 1 }))
+            {
+                <tr>
+                    <td>@order.Index</td>
+                    <td>
+                        <button @onclick="() => OnEdit.InvokeAsync(order.Order)">✏️ Edit</button>
+                        <button @onclick="() => OnDelete.InvokeAsync(order.Order)">🗑️ Delete</button>
+                    </td>
+                    <td>@order.Order.OrderNo</td>
+                    <td>@(DateTime.TryParseExact(order.Order.OrderDate, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var dt) ? dt.ToString("yyyy-MM-dd") : order.Order.OrderDate)</td>
+                    <td>@order.Order.CustomerName</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

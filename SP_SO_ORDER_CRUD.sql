@@ -1,4 +1,4 @@
-﻿CREATE PROCEDURE [dbo].[SP_SO_ORDER_CRUD]
+﻿ALTER PROCEDURE [dbo].[SP_SO_ORDER_CRUD]
     @P_ACTION         VARCHAR(10),
     @P_SO_ORDER_ID    BIGINT = NULL,
     @P_ORDER_NO       VARCHAR(20) = NULL,
@@ -83,9 +83,11 @@ BEGIN
     END
     ELSE IF @P_ACTION = 'VIEW'
     BEGIN
-        SELECT O.SO_ORDER_ID, O.ORDER_NO, 
-               CONVERT(VARCHAR(8), O.ORDER_DATE, 112) AS ORDER_DATE, -- Convert DATE to yyyyMMdd format
-               O.COM_CUSTOMER_ID, C.CUSTOMER_NAME
+        SELECT 
+            O.SO_ORDER_ID,
+            O.ORDER_NO, 
+            CONVERT(VARCHAR(8), O.ORDER_DATE, 112) AS ORDER_DATE, -- Convert to yyyyMMdd
+            C.CUSTOMER_NAME
         FROM SO_ORDER O
         LEFT JOIN COM_CUSTOMER C ON O.COM_CUSTOMER_ID = C.COM_CUSTOMER_ID;
     END

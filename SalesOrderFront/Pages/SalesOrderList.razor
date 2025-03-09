@@ -1,0 +1,106 @@
+﻿@page "/salesorders"
+@using SalesOrderFront.Interfaces
+@using SalesOrderFront.Models
+@inject ISalesOrderViewModel ViewModel
+
+<h3>📦 Sales Orders</h3>
+
+<!-- 🔹 Search & Order Date Filters -->
+<div class="filter-container">
+    <input @bind="searchText" placeholder="🔍 Search Sales Order..." />
+    <input type="date" @bind="DisplayOrderDate" />
+    <button @onclick="Search">🔎 Search</button>
+</div>
+
+<!-- 🔹 Buttons (Above Grid) -->
+<div class="button-container">
+    <button @onclick="ShowAddForm">➕ Add New</button>
+    <button>💡 Hint</button>
+</div>
+
+<!-- 🔹 Sales Order Grid -->
+<SalesOrderTable Orders="ViewModel.SalesOrders" OnEdit="EditOrder" OnDelete="DeleteOrder" />
+
+<!-- 🔹 Sales Order Form (Visible Only When Adding/Editing) -->
+@if (IsFormVisible)
+{
+    <SalesOrderForm Order="SelectedOrder" OnSave="SaveOrder" OnCancel="CloseForm" />
+}
+
+@code {
+    private bool isLoading = true;
+    private string errorMessage;
+    private string searchText = "";
+    private string orderDate = DateTime.Now.ToString("yyyyMMdd"); // ✅ Stored as `yyyyMMdd`
+    private SalesOrderModel SelectedOrder { get; set; } = new();
+    private bool IsFormVisible = false;
+
+    private DateTime? DisplayOrderDate
+    {
+        get => DateTime.TryParseExact(orderDate, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var dt)
+            ? dt
+            : (DateTime?)null; // ✅ Convert `yyyyMMdd` → `DateTime?` (for UI)
+
+        set => orderDate = value.HasValue
+            ? value.Value.ToString("yyyyMMdd")
+            : orderDate; // ✅ Convert `DateTime?` → `yyyyMMdd` (for API)
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await Search();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "⚠ Error loading data.";
+            Console.WriteLine($"❌ ERROR: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Search()
+    {
+        await ViewModel.LoadSalesOrders(
+            new SalesOrderFilter()
+                {
+                    Search = searchText,
+                    OrderDate = orderDate
+                });
+    }
+
+    private void ShowAddForm()
+    {
+        SelectedOrder = new SalesOrderModel();
+        IsFormVisible = true;
+    }
+
+    private async Task EditOrder(SalesOrderModel order)
+    {
+        SelectedOrder = await ViewModel.GetRecordById(order.RecId.Value);
+        IsFormVisible = true;
+    }
+
+    private async Task SaveOrder(SalesOrderModel order)
+    {
+        order.OrderDate = DateTime.ParseExact(order.OrderDate, "yyyy-MM-dd", null).ToString("yyyyMMdd"); // ✅ Convert back to `yyyyMMdd`
+        await ViewModel.MaintainOrder(order, order.RecId == null ? "INSERT" : "UPDATE");
+        IsFormVisible = false;
+        await Search();
+    }
+
+    private void CloseForm()
+    {
+        IsFormVisible = false;
+    }
+
+    private async Task DeleteOrder(SalesOrderModel order)
+    {
+        await ViewModel.MaintainOrder(order, "DELETE");
+        await Search();
+    }
+}

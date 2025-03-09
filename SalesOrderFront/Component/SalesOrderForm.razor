@@ -1,0 +1,31 @@
+﻿@using SalesOrderFront.Models
+@code {
+    [Parameter] public SalesOrderModel Order { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string DisplayOrderDate
+    {
+        get => DateTime.TryParseExact(Order.OrderDate, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var dt) ? dt.ToString("yyyy-MM-dd") : DateTime.Now.ToString("yyyy-MM-dd"); // ✅ Convert to user-friendly format
+        set => Order.OrderDate = DateTime.Parse(value).ToString("yyyyMMdd"); // ✅ Convert back when saving
+    }
+}
+
+@if (Order != null)
+{
+    <div class="modal">
+        <h3>@(Order.RecId == null ? "➕ Add New Order" : "✏️ Edit Order")</h3>
+
+        <label>Sales Order Name:</label>
+        <input @bind="Order.OrderNo" />
+
+        <label>Order Date:</label>
+        <input type="datetime" @bind="DisplayOrderDate" />
+
+        <label>Customer Name:</label>
+        <input @bind="Order.CustomerName" />
+
+        <button @onclick="() => OnSave.InvokeAsync()">💾 Save</button>
+        <button @onclick="() => OnCancel.InvokeAsync()">❌ Cancel</button>
+    </div>
+}

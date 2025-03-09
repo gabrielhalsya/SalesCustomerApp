@@ -1,9 +1,6 @@
-﻿using System.Resources;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SalesCustomerAPI.Models;
 using SalesCustomerAPI.Repositories;
-using SalesCustomerResources; 
-using System.Globalization;
 
 namespace SalesCustomerAPI.Controllers
 {
@@ -51,11 +48,12 @@ namespace SalesCustomerAPI.Controllers
         }
 
         [HttpPost("GetList")]
-        public async Task<IActionResult> GetListSalesOrder([FromBody] SalesOrderBase request)
+        public async Task<IActionResult> GetListSalesOrder([FromBody] SalesOrderBase request) // ✅ Use API Model
         {
             try
             {
-                var result = await _salesOrderRepository.GetListSalesOrder(request);
+                var result = await _salesOrderRepository.GetListSalesOrder(request); // ✅ Response is `SalesOrderMaintain`
+
                 return Ok(new { Data = result, Errors = new List<string>() });
             }
             catch (Exception ex)
@@ -64,5 +62,6 @@ namespace SalesCustomerAPI.Controllers
                 return BadRequest(new { Data = (object)null, Errors = new List<string> { ex.Message } });
             }
         }
+
     }
 }
